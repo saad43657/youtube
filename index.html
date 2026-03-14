@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>YTDrop — YouTube Downloader</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0c0c0f;
+  --surface:#13131a;
+  --surface2:#1a1a24;
+  --border:#22222e;
+  --border2:#2e2e3e;
+  --red:#e63329;
+  --red2:#c0281f;
+  --gold:#f0a500;
+  --green:#22c55e;
+  --white:#f0ece4;
+  --muted:#6b6b80;
+  --muted2:#4a4a5a;
+  --mono:'IBM Plex Mono',monospace;
+  --sans:'IBM Plex Sans',sans-serif;
+}
+html,body{min-height:100vh;background:var(--bg);color:var(--white);font-family:var(--sans)}
+body{
+  background-image:
+    radial-gradient(ellipse 60% 40% at 20% 10%,rgba(230,51,41,.07) 0%,transparent 60%),
+    radial-gradient(ellipse 40% 30% at 80% 90%,rgba(240,165,0,.05) 0%,transparent 60%);
+}
+
+/* ── HEADER ── */
+header{
+  position:sticky;top:0;z-index:100;
+  background:rgba(12,12,15,.95);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid var(--border);
+  height:54px;padding:0 32px;
+  display:flex;align-items:center;justify-content:space-between;
+}
+.logo{display:flex;align-items:center;gap:10px;text-decoration:none}
+.logo-icon{
+  width:30px;height:30px;background:var(--red);border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+}
+.logo-icon svg{width:16px;height:16px;fill:#fff}
+.logo-text{font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:var(--white)}
+.logo-by{font-family:var(--mono);font-size:9px;color:var(--muted);letter-spacing:1px}
+
+#statusBadge{
+  display:flex;align-items:center;gap:6px;
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  padding:4px 12px;border-radius:20px;
+  border:1px solid var(--border2);color:var(--muted);
+  transition:all .3s;
+}
+#statusBadge.ok{color:var(--green);border-color:rgba(34,197,94,.3);background:rgba(34,197,94,.06)}
+#statusBadge.fail{color:var(--red);border-color:rgba(230,51,41,.3);background:rgba(230,51,41,.06)}
+.badge-dot{width:5px;height:5px;border-radius:50%;background:currentColor;animation:blink 2s infinite}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:.2}}
+
+/* ── MAIN ── */
+main{max-width:800px;margin:0 auto;padding:48px 24px 100px}
+
+/* ── HERO ── */
+.hero{margin-bottom:40px;text-align:center}
+.hero-tag{
+  display:inline-flex;align-items:center;gap:8px;
+  font-family:var(--mono);font-size:10px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--red);margin-bottom:16px;
+}
+.hero h1{
+  font-family:'Bebas Neue',sans-serif;
+  font-size:clamp(56px,12vw,100px);
+  line-height:.88;letter-spacing:3px;
+  color:var(--white);margin-bottom:14px;
+}
+.hero h1 span{color:var(--red)}
+.hero-sub{font-size:13px;color:var(--muted);font-family:var(--mono);letter-spacing:.5px;line-height:1.8}
+.badges{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin-top:14px}
+.badge{
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  padding:3px 10px;border-radius:3px;
+  border:1px solid var(--border2);color:var(--muted);
+}
+.badge.hot{border-color:rgba(230,51,41,.35);color:rgba(230,51,41,.8)}
+
+/* ── SEARCH BOX ── */
+.search-box{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  padding:24px;margin-bottom:24px;position:relative;overflow:hidden;
+}
+.search-box::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:2px;
+  background:linear-gradient(90deg,var(--red),var(--gold),var(--red));
+}
+.search-label{
+  font-family:var(--mono);font-size:9px;letter-spacing:2px;text-transform:uppercase;
+  color:var(--muted);margin-bottom:10px;
+}
+.url-row{display:flex;gap:8px}
+#urlInput{
+  flex:1;background:var(--bg);border:1px solid var(--border2);border-radius:6px;
+  color:var(--white);font-family:var(--mono);font-size:13px;
+  padding:11px 14px;outline:none;transition:border-color .2s;min-width:0;
+}
+#urlInput::placeholder{color:var(--muted2)}
+#urlInput:focus{border-color:var(--red)}
+
+.btn-paste{
+  background:var(--surface2);border:1px solid var(--border2);border-radius:6px;
+  color:var(--muted);font-family:var(--mono);font-size:10px;letter-spacing:.5px;
+  padding:11px 14px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;
+}
+.btn-paste:hover{background:var(--border2);color:var(--white)}
+
+.btn-fetch{
+  background:var(--red);border:none;border-radius:6px;
+  color:#fff;font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;
+  padding:11px 24px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0;
+}
+.btn-fetch:hover{background:var(--red2);transform:translateY(-1px)}
+.btn-fetch:disabled{background:var(--muted2);cursor:not-allowed;transform:none}
+
+.hint{font-family:var(--mono);font-size:9px;color:var(--muted2);margin-top:8px;letter-spacing:.3px}
+
+.err-box{
+  display:none;margin-top:12px;padding:10px 14px;border-radius:6px;
+  background:rgba(230,51,41,.08);border:1px solid rgba(230,51,41,.25);
+  color:#f87171;font-family:var(--mono);font-size:11px;
+}
+.err-box.show{display:block}
+
+/* ── LOADER ── */
+#loader{display:none;text-align:center;padding:40px}
+#loader.show{display:block}
+.spin-wrap{display:inline-flex;align-items:center;gap:12px;color:var(--muted);font-family:var(--mono);font-size:12px}
+.spinner{width:18px;height:18px;border:2px solid var(--border2);border-top-color:var(--red);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* ── VIDEO CARD ── */
+#videoSection{display:none}
+.vcard{
+  display:flex;gap:0;background:var(--surface);border:1px solid var(--border);
+  border-radius:10px;overflow:hidden;margin-bottom:20px;
+}
+.vthumb{width:180px;flex-shrink:0;background:#000;position:relative}
+.vthumb img{width:100%;height:100%;object-fit:cover;display:block}
+.vdur{
+  position:absolute;bottom:6px;right:6px;
+  background:rgba(0,0,0,.85);color:#fff;
+  font-family:var(--mono);font-size:9px;padding:2px 6px;border-radius:3px;
+}
+.vmeta{padding:16px 18px;flex:1;min-width:0;display:flex;flex-direction:column;gap:6px}
+.vtitle{font-size:14px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.vchan{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.vstats{display:flex;gap:14px;flex-wrap:wrap}
+.vstat{font-family:var(--mono);font-size:9px;color:var(--muted2);letter-spacing:.3px}
+.thumb-save{
+  display:inline-flex;align-items:center;gap:5px;margin-top:auto;
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  color:var(--muted);text-decoration:none;
+  border:1px solid var(--border2);padding:4px 10px;border-radius:4px;
+  transition:all .2s;width:fit-content;
+}
+.thumb-save:hover{color:var(--gold);border-color:rgba(240,165,0,.4)}
+
+/* ── FORMAT TABS ── */
+.tab-row{display:flex;border:1px solid var(--border2);border-radius:6px;overflow:hidden;margin-bottom:14px;width:fit-content}
+.tab{
+  font-family:var(--mono);font-size:10px;letter-spacing:1px;text-transform:uppercase;
+  padding:8px 20px;cursor:pointer;color:var(--muted);
+  background:transparent;border:none;transition:all .18s;
+}
+.tab:not(:last-child){border-right:1px solid var(--border2)}
+.tab:hover{background:var(--surface2);color:var(--white)}
+.tab.active{background:var(--red);color:#fff}
+
+/* ── FORMAT LIST ── */
+#fmtList{display:flex;flex-direction:column;gap:3px}
+.fmt-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;background:var(--surface);border:1px solid var(--border);
+  border-radius:6px;transition:all .15s;
+}
+.fmt-row:hover{border-color:var(--border2);background:var(--surface2)}
+
+.qbadge{
+  font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1px;
+  padding:2px 8px;border-radius:4px;flex-shrink:0;min-width:48px;text-align:center;
+}
+.q4k  {background:rgba(240,165,0,.15);color:var(--gold);border:1px solid rgba(240,165,0,.2)}
+.q2k  {background:rgba(167,139,250,.12);color:#a78bfa;border:1px solid rgba(167,139,250,.2)}
+.q1080{background:rgba(230,51,41,.12);color:#f87171;border:1px solid rgba(230,51,41,.2)}
+.q720 {background:rgba(34,197,94,.1);color:#4ade80;border:1px solid rgba(34,197,94,.2)}
+.qsd  {background:rgba(148,163,184,.08);color:#94a3b8;border:1px solid rgba(148,163,184,.15)}
+.qaudio{background:rgba(96,165,250,.1);color:#60a5fa;border:1px solid rgba(96,165,250,.2)}
+
+.fmt-info{flex:1;min-width:0}
+.fmt-name{font-size:13px;font-weight:500;color:var(--white)}
+.fmt-detail{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:.2px}
+.fmt-size{font-family:var(--mono);font-size:9px;color:var(--muted2);flex-shrink:0}
+
+.dl-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:7px 14px;border-radius:5px;
+  background:var(--surface2);border:1px solid var(--border2);
+  color:var(--white);font-family:var(--mono);font-size:10px;letter-spacing:.5px;
+  cursor:pointer;transition:all .15s;white-space:nowrap;flex-shrink:0;
+}
+.dl-btn:hover{background:var(--red);border-color:var(--red);transform:translateY(-1px)}
+.dl-btn:disabled{background:var(--border);color:var(--muted2);border-color:var(--border);cursor:not-allowed;transform:none}
+
+/* ── PROGRESS CARD ── */
+#progSection{display:none;margin-top:20px}
+.prog-card{
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:22px 24px;
+}
+.prog-top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px}
+.prog-title{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--white)}
+.prog-pct{font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;color:var(--red)}
+.prog-track{height:5px;background:var(--border2);border-radius:3px;overflow:hidden;margin-bottom:10px}
+.prog-bar{height:100%;border-radius:3px;width:0%;background:linear-gradient(90deg,var(--red),var(--gold));transition:width .3s ease}
+.prog-meta{display:flex;justify-content:space-between;align-items:center}
+.prog-msg{font-family:var(--mono);font-size:10px;color:var(--muted)}
+.prog-speed{font-family:var(--mono);font-size:10px;color:var(--muted2)}
+
+/* ── SAVE BUTTON ── */
+#saveBtn{
+  display:none;margin-top:14px;width:100%;
+  padding:14px;border-radius:7px;border:none;cursor:pointer;
+  background:linear-gradient(135deg,var(--red),#ff6b35);
+  color:#fff;font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;
+  align-items:center;justify-content:center;gap:10px;
+  transition:all .2s;text-decoration:none;
+}
+#saveBtn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(230,51,41,.35)}
+
+/* ── STORAGE ── */
+#storageSection{display:none;margin-top:44px}
+.sec-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--white)}
+.btn-clearall{
+  font-family:var(--mono);font-size:9px;letter-spacing:1px;text-transform:uppercase;
+  padding:5px 12px;border:1px solid var(--border2);border-radius:4px;
+  background:transparent;color:var(--muted);cursor:pointer;transition:all .2s;
+}
+.btn-clearall:hover{border-color:var(--red);color:var(--red)}
+
+.file-row{
+  display:flex;align-items:center;gap:10px;
+  padding:10px 14px;border-bottom:1px solid var(--border);
+  transition:background .15s;
+}
+.file-row:hover{background:var(--surface2)}
+.file-ico{font-size:18px;flex-shrink:0}
+.file-info{flex:1;min-width:0}
+.file-name{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.file-meta{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
+.file-acts{display:flex;gap:5px;flex-shrink:0}
+.fact{
+  font-family:var(--mono);font-size:9px;letter-spacing:.5px;text-transform:uppercase;
+  padding:4px 10px;border:1px solid var(--border2);border-radius:4px;
+  background:transparent;color:var(--muted);cursor:pointer;transition:all .15s;
+  text-decoration:none;display:inline-flex;align-items:center;gap:3px;
+}
+.fact:hover{background:var(--border2);color:var(--white)}
+.fact.del:hover{background:rgba(230,51,41,.15);border-color:rgba(230,51,41,.4);color:#f87171}
+
+/* ── FOOTER ── */
+footer{
+  background:var(--surface);border-top:1px solid var(--border);
+  padding:20px 32px;display:flex;align-items:center;justify-content:space-between;
+  flex-wrap:wrap;gap:12px;margin-top:80px;
+}
+.ft-brand{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px}
+.ft-dev{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px}
+.ft-dev strong{color:var(--gold)}
+.ft-note{font-family:var(--mono);font-size:9px;color:var(--muted2);max-width:340px;line-height:1.8;letter-spacing:.3px}
+
+/* ── RESPONSIVE ── */
+@media(max-width:600px){
+  main{padding:32px 16px 80px}
+  header{padding:0 16px}
+  .vcard{flex-direction:column}
+  .vthumb{width:100%;height:160px}
+  .url-row{flex-wrap:wrap}
+  #urlInput{min-width:100%}
+  .hero h1{font-size:52px}
+  footer{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <a class="logo" href="#">
+    <div class="logo-icon">
+      <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
+    </div>
+    <div>
+      <div class="logo-text">YTDROP</div>
+    </div>
+  </a>
+  <div id="statusBadge">
+    <div class="badge-dot"></div>
+    <span id="statusTxt">CHECKING</span>
+  </div>
+</header>
+
+<main>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-tag">&#9658; YouTube Downloader</div>
+    <h1>DOWNLOAD<br><span>ANYTHING</span></h1>
+    <p class="hero-sub">4K · 2K · 1080p · 720p · 480p · 360p · MP3<br>Every format. Full speed. Video + Audio. Always.</p>
+    <div class="badges">
+      <span class="badge hot">4K Ultra HD</span>
+      <span class="badge hot">2K Quad HD</span>
+      <span class="badge">1080p 60fps</span>
+      <span class="badge">1080p 30fps</span>
+      <span class="badge">720p HD</span>
+      <span class="badge">480p · 360p</span>
+      <span class="badge">MP3 Audio</span>
+    </div>
+  </div>
+
+  <!-- SEARCH -->
+  <div class="search-box">
+    <div class="search-label">Paste YouTube URL</div>
+    <div class="url-row">
+      <input id="urlInput" type="url" placeholder="https://youtube.com/watch?v=..." autocomplete="off" spellcheck="false"/>
+      <button class="btn-paste" onclick="pasteUrl()">📋 Paste</button>
+      <button class="btn-fetch" id="fetchBtn" onclick="fetchInfo()">FETCH ▶</button>
+    </div>
+    <div class="hint">Supports: youtube.com/watch · youtu.be/ · YouTube Shorts</div>
+    <div class="err-box" id="errBox"></div>
+  </div>
+
+  <!-- LOADER -->
+  <div id="loader">
+    <div class="spin-wrap"><div class="spinner"></div>Fetching video info...</div>
+  </div>
+
+  <!-- VIDEO SECTION -->
+  <div id="videoSection">
+
+    <!-- Video card -->
+    <div class="vcard" id="vCard">
+      <div class="vthumb">
+        <img id="vThumb" src="" alt=""/>
+        <div class="vdur" id="vDur"></div>
+      </div>
+      <div class="vmeta">
+        <div class="vtitle" id="vTitle"></div>
+        <div class="vchan" id="vChan"></div>
+        <div class="vstats" id="vStats"></div>
+        <a class="thumb-save" id="thumbLink" href="#" target="_blank" rel="noopener">🖼 Save Thumbnail</a>
+      </div>
+    </div>
+
+    <!-- Format tabs -->
+    <div class="tab-row">
+      <button class="tab active" data-q="video" onclick="setTab('video')">🎬 Video</button>
+      <button class="tab" data-q="audio" onclick="setTab('audio')">🎵 MP3</button>
+    </div>
+
+    <!-- Format list -->
+    <div id="fmtList"></div>
+
+    <!-- Progress -->
+    <div id="progSection">
+      <div class="prog-card">
+        <div class="prog-top">
+          <div class="prog-title" id="progTitle">DOWNLOADING</div>
+          <div class="prog-pct" id="progPct">0%</div>
+        </div>
+        <div class="prog-track"><div class="prog-bar" id="progBar"></div></div>
+        <div class="prog-meta">
+          <div class="prog-msg" id="progMsg">Connecting...</div>
+          <div class="prog-speed" id="progSpeed"></div>
+        </div>
+        <a id="saveBtn" href="#" download style="display:none;">
+          ⬇ SAVE TO DEVICE
+        </a>
+      </div>
+    </div>
+
+  </div><!-- /videoSection -->
+
+  <!-- STORAGE -->
+  <div id="storageSection">
+    <div class="sec-head">
+      <div class="sec-title">DOWNLOADED FILES</div>
+      <button class="btn-clearall" onclick="clearAll()">🗑 Clear All</button>
+    </div>
+    <div id="fileList"></div>
+  </div>
+
+</main>
+
+<footer>
+  <div>
+    <div class="ft-brand">YTDROP</div>
+    <div class="ft-dev">Developed by <strong>SAAD KHAN</strong></div>
+  </div>
+  <div class="ft-note">For personal use only. Respect content creators and copyright laws. This tool is for offline viewing of content you have rights to access.</div>
+</footer>
+
+<script>
+// ── State ─────────────────────────────────────────────────
+let videoInfo = null, vFmts = [], aFmts = [], curTab = 'video', busy = false, es = null;
+
+// ── Helpers ───────────────────────────────────────────────
+const isYT  = u => /(?:youtube\.com\/(?:watch|shorts)|youtu\.be\/)/.test(u);
+const fmtN  = n => !n?'':n>=1e9?(n/1e9).toFixed(1)+'B':n>=1e6?(n/1e6).toFixed(1)+'M':n>=1e3?(n/1e3).toFixed(0)+'K':String(n);
+const fmtSz = b => !b?'':b>=1e9?(b/1e9).toFixed(1)+' GB':b>=1e6?(b/1e6).toFixed(1)+' MB':(b/1e3).toFixed(0)+' KB';
+
+function showErr(msg) {
+  const b = document.getElementById('errBox');
+  b.textContent = msg; b.className = 'err-box' + (msg ? ' show' : '');
+}
+
+function qbadge(h) {
+  if (h >= 2160) return ['q4k',  '4K'];
+  if (h >= 1440) return ['q2k',  '2K'];
+  if (h >= 1080) return ['q1080','HD'];
+  if (h >= 720)  return ['q720', '720p'];
+  return ['qsd', h + 'p'];
+}
+
+// ── Status check ──────────────────────────────────────────
+async function checkStatus() {
+  try {
+    const d = await fetch('/api/status').then(r => r.json());
+    const el = document.getElementById('statusBadge');
+    const tx = document.getElementById('statusTxt');
+    if (d.ok) {
+      el.className = 'ok';
+      tx.textContent = 'READY · v' + d.version.split('\n')[0].trim().slice(0, 8);
+    } else {
+      el.className = 'fail';
+      tx.textContent = 'YT-DLP MISSING';
+    }
+  } catch {
+    document.getElementById('statusBadge').className = 'fail';
+    document.getElementById('statusTxt').textContent = 'OFFLINE';
+  }
+}
+
+// ── Paste ─────────────────────────────────────────────────
+async function pasteUrl() {
+  try { const t = await navigator.clipboard.readText(); document.getElementById('urlInput').value = t; if (isYT(t)) fetchInfo(); } catch {}
+}
+
+// ── Fetch info ────────────────────────────────────────────
+async function fetchInfo() {
+  const url = document.getElementById('urlInput').value.trim();
+  if (!url) return showErr('Paste a YouTube URL first.');
+  if (!isYT(url)) return showErr('Not a valid YouTube URL.');
+  showErr('');
+  document.getElementById('loader').classList.add('show');
+  document.getElementById('videoSection').style.display = 'none';
+  document.getElementById('fetchBtn').disabled = true;
+  try {
+    const d = await fetch('/api/info?url=' + encodeURIComponent(url)).then(r => r.json());
+    if (d.error) throw new Error(d.error);
+    videoInfo = d; vFmts = d.videoFormats || []; aFmts = d.audioFormats || [];
+    // Populate card
+    const img = document.getElementById('vThumb');
+    img.src = d.thumbnail || ''; img.onerror = () => img.style.display = 'none';
+    document.getElementById('vDur').textContent = d.durationStr || '';
+    document.getElementById('vTitle').textContent = d.title || '';
+    document.getElementById('vChan').textContent = d.channel || '';
+    const stats = [];
+    if (d.viewCount) stats.push(`<span class="vstat">👁 ${fmtN(d.viewCount)} views</span>`);
+    if (d.likeCount) stats.push(`<span class="vstat">❤ ${fmtN(d.likeCount)}</span>`);
+    if (d.durationStr) stats.push(`<span class="vstat">⏱ ${d.durationStr}</span>`);
+    document.getElementById('vStats').innerHTML = stats.join('');
+    document.getElementById('thumbLink').href = d.thumbnail || '#';
+    document.getElementById('loader').classList.remove('show');
+    document.getElementById('videoSection').style.display = 'block';
+    document.getElementById('progSection').style.display = 'none';
+    document.getElementById('saveBtn').style.display = 'none';
+    setTab('video');
+    loadStorage();
+  } catch(e) {
+    document.getElementById('loader').classList.remove('show');
+    showErr('⚠ ' + e.message);
+  }
+  document.getElementById('fetchBtn').disabled = false;
+}
+
+// ── Tabs ──────────────────────────────────────────────────
+function setTab(t) {
+  curTab = t;
+  document.querySelectorAll('.tab').forEach(b => b.classList.toggle('active', b.dataset.q === t));
+  renderFmts(t === 'video' ? vFmts : aFmts, t);
+}
+
+// ── Render formats ────────────────────────────────────────
+function renderFmts(list, type) {
+  const el = document.getElementById('fmtList');
+  if (!list || !list.length) { el.innerHTML = '<div style="padding:24px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--muted)">No formats found.</div>'; return; }
+  const isAud = type === 'audio';
+  el.innerHTML = list.map(f => {
+    const [bc, bt] = isAud ? ['qaudio', 'MP3'] : qbadge(f.height);
+    const codec = f.codec ? ' · ' + f.codec : '';
+    const detail = isAud
+      ? `Audio only · ${f.abr||0}kbps · MP3`
+      : `${f.height}p · ${f.fps||30}fps${codec} · MP4 · Video + Audio ✓`;
+    const sz = fmtSz(f.filesize);
+    const h = f.height || 0;
+    return `
+      <div class="fmt-row">
+        <div class="qbadge ${bc}">${bt}</div>
+        <div class="fmt-info">
+          <div class="fmt-name">${f.label}</div>
+          <div class="fmt-detail">${detail}</div>
+        </div>
+        ${sz ? `<div class="fmt-size">${sz}</div>` : ''}
+        <button class="dl-btn" onclick="startDl('${f.formatId}','${type}',${h},this)" ${busy?'disabled':''}>
+          <svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/></svg>
+          Download
+        </button>
+      </div>`;
+  }).join('');
+}
+
+// ── Progress helpers ──────────────────────────────────────
+function setProg(pct, msg, speed) {
+  document.getElementById('progBar').style.width  = Math.min(pct, 100) + '%';
+  document.getElementById('progPct').textContent  = Math.round(pct) + '%';
+  document.getElementById('progMsg').textContent  = msg || '';
+  document.getElementById('progSpeed').textContent = speed || '';
+}
+
+// ── Start download ────────────────────────────────────────
+function startDl(formatId, type, height, btn) {
+  if (!videoInfo || busy) return;
+  if (es) { try { es.close(); } catch {} es = null; }
+
+  busy = true;
+  document.querySelectorAll('.dl-btn').forEach(b => b.disabled = true);
+  if (btn) btn.textContent = '...';
+
+  document.getElementById('progSection').style.display = 'block';
+  document.getElementById('saveBtn').style.display = 'none';
+  document.getElementById('progTitle').textContent = 'DOWNLOADING';
+  setProg(0, 'Connecting...', '');
+
+  const p = new URLSearchParams({ url: videoInfo.url, formatId, type, title: videoInfo.title || 'video', height });
+  es = new EventSource('/api/download?' + p);
+
+  es.onmessage = e => {
+    const d = JSON.parse(e.data);
+
+    if (d.type === 'progress') {
+      const speed = [d.speed, d.eta ? 'ETA ' + d.eta : ''].filter(Boolean).join('  ·  ');
+      setProg(d.percent || 0, d.size || 'Downloading...', speed);
+      const pct = d.percent || 0;
+      document.getElementById('progTitle').textContent =
+        pct < 65 ? 'DOWNLOADING VIDEO' : pct < 92 ? 'DOWNLOADING AUDIO' : pct < 99 ? 'MERGING' : 'COMPLETE';
+    }
+
+    if (d.type === 'done') {
+      es.close(); es = null; busy = false;
+      setProg(100, 'Complete!', '');
+      document.getElementById('progTitle').textContent = 'COMPLETE';
+      const sb = document.getElementById('saveBtn');
+      sb.href = d.downloadUrl; sb.download = d.filename;
+      sb.style.display = 'flex';
+      sb.click();  // auto-save
+      resetBtns(); loadStorage();
+    }
+
+    if (d.type === 'error') {
+      es.close(); es = null; busy = false;
+      setProg(0, '', '');
+      document.getElementById('progTitle').textContent = 'ERROR';
+      showErr('⚠ ' + (d.message || 'Download failed.'));
+      resetBtns();
+    }
+  };
+
+  es.onerror = () => {
+    if (es) { es.close(); es = null; }
+    busy = false;
+    showErr('⚠ Connection lost. Try again.');
+    resetBtns();
+  };
+}
+
+function resetBtns() {
+  document.querySelectorAll('.dl-btn').forEach(b => {
+    b.disabled = false;
+    b.innerHTML = '<svg viewBox="0 0 24 24" fill="currentColor" width="11" height="11"><path d="M19 9h-4V3H9v6H5l7 7 7-7zm-8 2V5h2v6h1.17L12 13.17 9.83 11H11zm-6 7h14v2H5v-2z"/></svg>Download';
+  });
+}
+
+// ── Storage ───────────────────────────────────────────────
+async function loadStorage() {
+  try {
+    const files = await fetch('/api/storage').then(r => r.json());
+    const sec = document.getElementById('storageSection');
+    if (!files.length) { sec.style.display = 'none'; return; }
+    sec.style.display = 'block';
+    const ext = n => { const m = n.match(/\.(\w+)$/); return m ? m[1].toUpperCase() : 'FILE'; };
+    const ico = n => { const e = ext(n).toLowerCase(); return e==='mp3'?'🎵':e==='mp4'?'🎬':'📄'; };
+    document.getElementById('fileList').innerHTML = files.map(f => `
+      <div class="file-row">
+        <div class="file-ico">${ico(f.name)}</div>
+        <div class="file-info">
+          <div class="file-name">${f.name}</div>
+          <div class="file-meta">${fmtSz(f.size)} · ${ext(f.name)} · ${new Date(f.mtime).toLocaleDateString()}</div>
+        </div>
+        <div class="file-acts">
+          <a class="fact" href="/api/file/${encodeURIComponent(f.name)}" download>⬇ Save</a>
+          <button class="fact del" onclick="delFile('${f.name.replace(/'/g,"\\'")}',this)">🗑 Del</button>
+        </div>
+      </div>`).join('');
+  } catch {}
+}
+
+async function delFile(name, btn) {
+  btn.textContent = '...';
+  await fetch('/api/storage/' + encodeURIComponent(name), { method: 'DELETE' });
+  loadStorage();
+}
+
+async function clearAll() {
+  if (!confirm('Delete all downloaded files?')) return;
+  const files = await fetch('/api/storage').then(r => r.json());
+  await Promise.all(files.map(f => fetch('/api/storage/' + encodeURIComponent(f.name), { method: 'DELETE' })));
+  loadStorage();
+}
+
+// ── Init ──────────────────────────────────────────────────
+document.getElementById('urlInput').addEventListener('keydown', e => { if (e.key === 'Enter') fetchInfo(); });
+document.getElementById('urlInput').addEventListener('paste', () => setTimeout(() => { const v = document.getElementById('urlInput').value; if (isYT(v)) fetchInfo(); }, 80));
+
+checkStatus();
+loadStorage();
+</script>
+</body>
+</html>
